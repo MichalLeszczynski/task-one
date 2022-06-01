@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to attach an IAM role to an EC2 instance
+   
+Parameters:
+
+  ImageId:
+    Type: String
+    Description: 'Linux 2 AMI for eu-central-1 Region'
+    Default: {{ ami_id|default("ami-05f5f4f906feab6a7", true) }}
+  AvailabilityZone:
+    Type: String
+    Description: Availability Zone into which instance will launch
+    Default: {{ availability_zone|default("eu-central-1a", true) }}
+  InstanceType:
+    Type: String
+    Description: Choosing  t2 micro because it is free
+    Default: {{ instance_type|default("t2.micro", true) }}
+  KeyName:
+    Description: SSH Keypair to login to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: {{ ssh_key_name|default("aws-rsa", true) }}
+  DemoBucketName:
+    Type: String
+    Description: Name of demo bucket
+    Default: {{ bucket_name|default("mleszczynsk-demobucket", true) }}
+
+Resources:
+
+  DemoS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref DemoBucketName
+
+  DemoInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties: 
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      AvailabilityZone: !Ref AvailabilityZone
+      KeyName: !Ref KeyName
+      SecurityGroupIds: 
+        - !Ref DemoSecurityGroup
+      IamInstanceProfile: !Ref DemoInstanceProfile
+
+  DemoSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: SG to allow SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: SSH-SG
+
+  DemoInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: demo-ec2-instance-profile
+      Path: /
+      Roles: 
+       - !Ref DemoEc2InstanceRole
+
+  DemoEc2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: demo-ec2-instance-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: DemoS3Policy
+        PolicyDocument:
+              Version: 2012-10-17
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:ListBuckets
+                    - s3:GetObjectVersion
+                  Resource:
+                    - !Sub 'arn:aws:s3:::${DemoBucketName}/*'
+
+Outputs:
+  DemoInstanceId:
+    Description: Instance Id 
+    Value: !Ref DemoInstance
