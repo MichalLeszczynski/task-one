@@ -24,5 +24,6 @@ destroy:
 	aws cloudformation delete-stack --stack-name $(STACKNAME)
 
 cleanup: 
-	find /lambda_function -type d -exec rm -rf '{}' \;
-	aws s3 rb $(BUCKETNAME)
+	find ./lambda_function/. -type d -exec rm -rf '{}' \;
+
+	# aws s3 rb $(BUCKETNAME)
