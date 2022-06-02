@@ -60,14 +60,13 @@ def handler(event, context):
             stack_name,
             launch_params,
         )
-        print(stack_result)
     elif action == "Delete":
         print(f"Deleting stack: {stack_name}")
         stack_result = delete_stack(
             stack_name
         )
-        print(stack_result)
     else:
-        print("No action specified - aborting")
+        stack_result = "No action specified - aborting"
 
     print(stack_result)
+    return stack_result

@@ -19,3 +19,11 @@ Run:
 make cleanup
 ```
 That will delete created s3 bucket and delete downloaded locally python pip packages. NOTE: this destroys only the stack containing lambda function - to destroy stack created by it you need to run API calls to the lambda function
+
+## Invoking deployed function
+
+Function endpoint is secured with API_IAM auth, so In order to send requests to deployed function, one need to have proper IAM permissions for that, and use proper tool as awscurl ([Invoking lambdas](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html))
+
+```
+awscurl -X POST --region eu-central-1 --service lambda <labda url> 
+```

@@ -1,8 +1,6 @@
-# all:
-# 	find /lambda_function -type d -exec rm -rf '{}' \;
 
-STACKNAME="myteststack25"
-BUCKETNAME="mleszczynsk-cloudformation-templates"
+STACKNAME=myteststack25
+BUCKETNAME=mleszczynsk-cloudformation-templates
 
 deploy: package
 	aws cloudformation deploy --template-file ./packaged-stack.yaml --stack-name $(STACKNAME) --capabilities CAPABILITY_NAMED_IAM
@@ -17,13 +15,16 @@ package: bucket
 bucket: 
 	aws s3 mb s3://mleszczynsk-cloudformation-templates || true
 
-recreate: destroy
-	make deploy
-
 destroy: 
 	aws cloudformation delete-stack --stack-name $(STACKNAME)
 
-cleanup: 
-	find ./lambda_function/. -type d -exec rm -rf '{}' \;
+cleanup: destroy
+	rm -rf lambda_function/*/
+	aws s3 rm s3://$(BUCKETNAME) --recursive
+	aws s3 rb s3://$(BUCKETNAME)
 
-	# aws s3 rb $(BUCKETNAME)
+test: output
+	awscurl -X POST --service lambda --region eu-central-1 $(shell cat url.txt) 
+
+output:
+	aws cloudformation describe-stacks --query 'Stacks[?StackName==`myteststack25`].Outputs[0][?OutputKey==`FunctionUrl`].OutputValue' --output=text > url.txt

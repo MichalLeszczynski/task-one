@@ -87,3 +87,22 @@ Resources:
       Role: !GetAtt 'FunctionRole.Arn'
       Timeout: 300
       Code: "./lambda_function"
+
+  MyUrlFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DeployFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: AWS_IAM
+
+  MyFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref DeployFunction
+      AuthType: AWS_IAM
+
+Outputs:
+  FunctionUrl:
+    Description: Url to invoke deployed Function
+    Value: !GetAtt MyFunctionUrl.FunctionUrl
