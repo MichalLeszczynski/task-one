@@ -39,6 +39,15 @@ Resources:
             - iam:GetRolePolicy
             - iam:DeleteRolePolicy
             Resource: "*"
+      - PolicyName: SSMFunctionPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - ssm:PutParameter
+            - ssm:DeleteParameter
+            Resource: "*"
       - PolicyName: EC2FunctionPolicy
         PolicyDocument:
           Version: 2012-10-17
@@ -55,6 +64,19 @@ Resources:
             - ec2:DescribeSecurityGroups
             - ec2:DescribeKeyPairs
             - ec2:DescribeInstances
+            - ec2:CreateKeyPair
+            - ec2:DeleteKeyPair
+            - ec2:CreateSubnet
+            - ec2:AssociateSubnetCidrBlock
+            - ec2:DescribeSubnets
+            - ec2:CreateSubnet
+            - ec2:DeleteSubnet
+            - ec2:CreateNetworkAcl
+            - ec2:DeleteNetworkAcl
+            - ec2:DescribeNetworkAcls
+            - ec2:ReplaceNetworkAclAssociation
+            - ec2:CreateNetworkAclEntry
+            - ec2:DeleteNetworkAclEntry
             Resource: "*"
       - PolicyName: CFNFunctionPolicy
         PolicyDocument:
@@ -76,6 +98,7 @@ Resources:
             - s3:CreateBucket
             - s3:DeleteBucket
             - s3:GetObject
+            - s3:ListBucket
             Resource: "*"
 
   DeployFunction:

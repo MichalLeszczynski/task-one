@@ -24,6 +24,16 @@ That will delete created s3 bucket and delete downloaded locally python pip pack
 
 Function endpoint is secured with API_IAM auth, so In order to send requests to deployed function, one need to have proper IAM permissions for that, and use proper tool as awscurl ([Invoking lambdas](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html))
 
+After acquiring awscurl, you can simply run this command (NOTE! It will use params specified in create_payload.json file):
+```
+make deploy_payload
+```
+
+
 ```
 awscurl -X POST --region eu-central-1 --service lambda <labda url> 
+```
+or after specifying right data in delete_payload.json file:
+```
+make delete_payload
 ```

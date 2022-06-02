@@ -1,5 +1,6 @@
 import boto3
 import jinja2
+import json
 
 
 def launch_stack(stack_name, launch_params):
@@ -35,7 +36,8 @@ def delete_stack(stack_name):
 
 
 def render_template(bucket_name, template_filename, template_params) -> str:
-    template = download_file_from_s3(bucket_name, template_filename)
+    # template = download_file_from_s3(bucket_name, template_filename)
+    template = read_template_file(template_filename)
     rendered_template = (
         jinja2.Environment(loader=jinja2.BaseLoader())
         .from_string(template)
@@ -44,29 +46,40 @@ def render_template(bucket_name, template_filename, template_params) -> str:
     return rendered_template
 
 
-def download_file_from_s3(bucket_name, template_file_name) -> str:
-    s3 = boto3.client("s3")
-    s3_response_object = s3.get_object(Bucket=bucket_name, Key=template_file_name)
-    return s3_response_object["Body"].read().decode("utf-8")
+# def download_file_from_s3(bucket_name, template_file_name) -> str:
+#         s3 = boto3.client("s3")
+#     s3_response_object = s3.get_object(Bucket=bucket_name, Key=template_file_name)
+#     return s3_response_object["Body"].read().decode("utf-8")
+
+
+def read_template_file(file_name):
+    with open(file_name) as f:
+        stack = f.read()
+    return stack
 
 
 def handler(event, context):
     print(f"Received event: {event}")
-    action = event.get("action")
-    stack_name = event.get("stack_name", "task-one-stack")
-    launch_params = event.get("launch_params")
-    if action == "Create":
-        stack_result = launch_stack(
-            stack_name,
-            launch_params,
-        )
-    elif action == "Delete":
-        print(f"Deleting stack: {stack_name}")
-        stack_result = delete_stack(
-            stack_name
-        )
-    else:
-        stack_result = "No action specified - aborting"
+    stack_result = "Uninitialized"
+    try:
+        body = json.loads(event.get("body"))
+        action = body.get("action")
+        print(f"Action: {action}")
+        stack_name = body.get("stack_name", "task-one-stack")
+        launch_params = body.get("launch_params")
 
-    print(stack_result)
-    return stack_result
+        if action == "Create":
+            stack_result = launch_stack(
+                stack_name,
+                launch_params,
+            )
+        elif action == "Delete":
+            print(f"Deleting stack: {stack_name}")
+            stack_result = delete_stack(stack_name)
+        else:
+            stack_result = "No action specified - aborting"
+    except Exception as err:
+        print(str(err))
+    finally:
+        print(stack_result)
+        return stack_result

@@ -1,2 +1,5 @@
 **/jinja2**
+**/markup**
 packaged-stack.yaml
+*.txt
+*.pem
