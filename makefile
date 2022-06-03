@@ -14,7 +14,7 @@ package: bucket
 		--output-template-file packaged-stack.yaml
 
 bucket: 
-	aws s3 mb s3://mleszczynsk-cloudformation-templates || true
+	aws s3 mb s3://$(BUCKETNAME) || true
 
 destroy: 
 	aws cloudformation delete-stack --stack-name $(STACKNAME)
