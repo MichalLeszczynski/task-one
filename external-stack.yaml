@@ -1,12 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Deploy task-one solution'
 
-Parameters:
-  BucketName:
-    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    Default: mleszczynsk-cloudformation-templates
-    Type: String
-
 Resources:
   FunctionRole:
     Type: AWS::IAM::Role
