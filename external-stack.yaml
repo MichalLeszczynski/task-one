@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Deploy task-one solution'
 
+Parameters:
+  ActionsDynamoDbTableName:
+    Type: String
+    Default: mlesz-cfn-actions
+
+  StatesDynamoDbTableName:
+    Type: String
+    Default: mlesz-cfn-states
+
+
 Resources:
   FunctionRole:
     Type: AWS::IAM::Role
@@ -94,21 +104,57 @@ Resources:
             - s3:GetObject
             - s3:ListBucket
             Resource: "*"
+      - PolicyName: StreamFunctionPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow #allow to write logs to cloudwatch
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          - Effect: Allow #allow lambda to read from the event stream
+            Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            Resource: "*"
 
-  DeployFunction:
+  RequestFunction:
     Type: AWS::Lambda::Function
     Properties:
       Description: Example
-      Handler: main.handler
+      Handler: main.request_handler
       Runtime: python3.9
       Role: !GetAtt 'FunctionRole.Arn'
       Timeout: 300
       Code: "./lambda_function"
+      Environment:
+        Variables:
+          ActionsDynamoDbTableName: !Ref ActionsDynamoDbTableName
+
+  StreamFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Example
+      Handler: main.stream_handler
+      Runtime: python3.9
+      Role: !GetAtt 'FunctionRole.Arn'
+      Timeout: 300
+      Code: "./lambda_function"
+      Environment:
+        Variables:
+          ActionsDynamoDbTableName: !Ref ActionsDynamoDbTableName
+          StatesDynamoDbTableName: !Ref StatesDynamoDbTableName
 
   MyUrlFunctionPermissions:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref DeployFunction
+      FunctionName: !Ref RequestFunction
       Action: lambda:InvokeFunctionUrl
       Principal: "*"
       FunctionUrlAuthType: AWS_IAM
@@ -116,8 +162,59 @@ Resources:
   MyFunctionUrl:
     Type: AWS::Lambda::Url
     Properties:
-      TargetFunctionArn: !Ref DeployFunction
+      TargetFunctionArn: !Ref RequestFunction
       AuthType: AWS_IAM
+
+  ActionsDynamoDBTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Ref ActionsDynamoDbTableName
+      AttributeDefinitions: 
+        - AttributeName: "Stackname"
+          AttributeType: "S"
+
+        - AttributeName: "Timestamp"
+          AttributeType: "S"
+
+      KeySchema: 
+        - AttributeName: "Stackname"
+          KeyType: "HASH"
+
+        - AttributeName: "Timestamp"
+          KeyType: "RANGE"
+
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  
+  StatesDynamoDBTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Ref StatesDynamoDbTableName
+      AttributeDefinitions: 
+        - AttributeName: "Stackname"
+          AttributeType: "S"
+
+      KeySchema: 
+        - AttributeName: "Stackname"
+          KeyType: "HASH"
+
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  TableStreamFunctionMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1 #trigger one lambda per document
+      Enabled: True
+      EventSourceArn: !GetAtt ActionsDynamoDBTable.StreamArn
+      FunctionName: !GetAtt StreamFunction.Arn
+      StartingPosition: LATEST #always start at the tail of the stream
 
 Outputs:
   FunctionUrl:

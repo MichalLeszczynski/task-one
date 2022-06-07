@@ -2,7 +2,6 @@
     "action": "Create",
     "stack_name": "mlesz-ec2-stack",
     "launch_params": {
-        "template_bucket_name": "mleszczynsk-cloudformation-templates",
         "template_filename": "internal-stack.yaml.j2",
         "template_params": {
             "bucket_name": "mlesz-ec2-bucket",
