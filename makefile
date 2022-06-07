@@ -11,7 +11,7 @@ deploy: package
 	aws cloudformation deploy --template-file ./packaged-stack.yaml --stack-name $(STACKNAME) --capabilities CAPABILITY_NAMED_IAM
 
 package: bucket
-	pip install --target ./lambda_function -r ./lambda_function/requirements.txt
+	find . -type d -name "*function" | xargs -I % pip install --target % -r %/requirements.txt
 	aws cloudformation package \
 		--template ./external-stack.yaml \
 		--s3-bucket $(BUCKETNAME) \
@@ -24,7 +24,7 @@ destroy:
 	aws cloudformation delete-stack --stack-name $(STACKNAME)
 
 cleanup: destroy
-	rm -rf lambda_function/*/
+	rm -rf stack_creator_function/*/ request_handler_function/*/
 	aws s3 rm s3://$(BUCKETNAME) --recursive
 	aws s3 rb s3://$(BUCKETNAME)
 

@@ -12,7 +12,29 @@ Parameters:
 
 
 Resources:
-  FunctionRole:
+  RequestFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: DynamodbFunctionPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            Resource: '*'
+
+  StreamFunctionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -130,9 +152,9 @@ Resources:
       Description: Example
       Handler: main.request_handler
       Runtime: python3.9
-      Role: !GetAtt 'FunctionRole.Arn'
+      Role: !GetAtt 'RequestFunctionRole.Arn'
       Timeout: 300
-      Code: "./lambda_function"
+      Code: "./request_handler_function"
       Environment:
         Variables:
           ActionsDynamoDbTableName: !Ref ActionsDynamoDbTableName
@@ -143,15 +165,15 @@ Resources:
       Description: Example
       Handler: main.stream_handler
       Runtime: python3.9
-      Role: !GetAtt 'FunctionRole.Arn'
+      Role: !GetAtt 'StreamFunctionRole.Arn'
       Timeout: 300
-      Code: "./lambda_function"
+      Code: "./stack_creator_function"
       Environment:
         Variables:
           ActionsDynamoDbTableName: !Ref ActionsDynamoDbTableName
           StatesDynamoDbTableName: !Ref StatesDynamoDbTableName
 
-  MyUrlFunctionPermissions:
+  RequestUrlFunctionPermissions:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref RequestFunction
@@ -159,7 +181,7 @@ Resources:
       Principal: "*"
       FunctionUrlAuthType: AWS_IAM
 
-  MyFunctionUrl:
+  RequestFunctionUrl:
     Type: AWS::Lambda::Url
     Properties:
       TargetFunctionArn: !Ref RequestFunction
@@ -210,13 +232,13 @@ Resources:
   TableStreamFunctionMapping:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      BatchSize: 1 #trigger one lambda per document
+      BatchSize: 1
       Enabled: True
       EventSourceArn: !GetAtt ActionsDynamoDBTable.StreamArn
       FunctionName: !GetAtt StreamFunction.Arn
-      StartingPosition: LATEST #always start at the tail of the stream
+      StartingPosition: LATEST
 
 Outputs:
   FunctionUrl:
     Description: Url to invoke deployed Function
-    Value: !GetAtt MyFunctionUrl.FunctionUrl
+    Value: !GetAtt RequestFunctionUrl.FunctionUrl
