@@ -3,3 +3,4 @@
 packaged-stack.yaml
 *.txt
 *.pem
+.vscode

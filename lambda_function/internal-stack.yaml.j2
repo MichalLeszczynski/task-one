@@ -125,7 +125,6 @@ Resources:
   DemoInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties: 
-      InstanceProfileName: demo-ec2-instance-profile
       Path: /
       Roles: 
        - !Ref DemoEc2InstanceRole
@@ -133,7 +132,6 @@ Resources:
   DemoEc2InstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: demo-ec2-instance-role
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
